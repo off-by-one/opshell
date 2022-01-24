@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+
+. <( op signin )
+
+opwgen() { export account="$1"; shift; op edit item "$account" password="$(pwgen $@)"; }
+opexit() { op signout; exit; }
+
+export -f opwgen
+export -f opexit
+
+if [ $# = 0 ]
+then
+  echo "Welcome to the 1password subshell!"
+  echo
+  echo " - op     [command...]  | execute a 1password command in this session"
+  echo " - opwgen [item] [opts] | use pwgen flags to generate a password"
+  echo " - opexit               | use op signout to securely exit the session"
+
+  bash --rcfile <(cat $HOME/.bashrc <(echo 'PS1="\[\033[38;5;1m\]op | $PS1"'))
+else
+  "$@"
+  opexit
+fi
