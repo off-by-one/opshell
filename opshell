@@ -1,8 +1,23 @@
 #!/usr/bin/env bash
 
-. <( op signin )
+# sign in to 1password
+eval "$(op signin)"
 
-opwgen() { export account="$1"; shift; op edit item "$account" password="$(pwgen $@)"; }
+# ----------------------------------- EDIT ME -----------------------------------
+# Edit the variables below to set your own commands for:
+
+# Command that generates passwords for opwgen. opwgen will forward arguments to
+# this command, so omit any parameters you'd like to customize per password.
+export PWGEN="pwgen"
+# ----------------------------------- EDIT ME -----------------------------------
+
+opwgen() {
+  export account="$1";
+  shift;
+
+  # Redirect to /dev/null to avoid printing the password
+  op item edit "$account" "password=$($PWGEN "$@")" 1> /dev/null;
+}
 opexit() { op signout; exit; }
 
 export -f opwgen
@@ -16,7 +31,10 @@ then
   echo " - opwgen [item] [opts] | use pwgen flags to generate a password"
   echo " - opexit               | use op signout to securely exit the session"
 
-  bash --rcfile <(cat $HOME/.bashrc <(echo 'PS1="\[\033[38;5;1m\]op | $PS1"'))
+  # Very hacky - insert a red "op |" into PS1 to track this bash session.
+  # Disabling shellcheck's warning - we want to insert the literal '$PS1'
+  # shellcheck disable=SC2016
+  bash --rcfile <(cat "$HOME/.bashrc" <(echo 'PS1="\[\033[38;5;1m\]op | $PS1"'))
 else
   "$@"
   opexit
